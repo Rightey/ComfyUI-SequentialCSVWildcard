@@ -9,6 +9,6 @@ dependencies = []
 Repository = "https://github.com/Rightey/ComfyUI-SequentialCSVWildcard"
 
 [tool.comfy]
-PublisherId = "PUBLISHER_ID"
+PublisherId = "forestgreen"
 DisplayName = "Sequential CSV Wildcard"
 Icon = ""
