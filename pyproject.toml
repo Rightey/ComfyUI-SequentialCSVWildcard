@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-sequentialcsvwildcard"
+description = "Load prompts from a CSV file and step through them row by row, expanding {a|b|c} wildcards sequentially."
+version = "1.0.0"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/Rightey/ComfyUI-SequentialCSVWildcard"
+
+[tool.comfy]
+PublisherId = "PUBLISHER_ID"
+DisplayName = "Sequential CSV Wildcard"
+Icon = ""
