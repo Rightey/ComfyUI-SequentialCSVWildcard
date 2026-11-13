@@ -1,6 +1,6 @@
 # ComfyUI Sequential CSV Wildcard
 
-A ComfyUI custom node that loads prompts from a CSV file and steps through them one row at a time, expanding `{option1|option2|option3}` wildcards in order rather than at random.
+A ComfyUI custom node that loads prompts from a CSV file and steps through them one row at a time in order rather than at random.
 
 ## Node: CSV Sequential Wildcard Prompt
 
