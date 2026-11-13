@@ -43,8 +43,8 @@ class SequentialCSVWildcard:
             }
         }
 
-    RETURN_TYPES = ("STRING", "INT", "INT")
-    RETURN_NAMES = ("prompt", "used_index", "total_rows")
+    RETURN_TYPES = ("STRING", "INT", "INT", "INT")
+    RETURN_NAMES = ("prompt", "used_index", "total_rows", "total_prompts")
     FUNCTION = "process"
     CATEGORY = "prompt/csv"
 
@@ -74,39 +74,60 @@ class SequentialCSVWildcard:
         if not rows:
             raise ValueError("CSV contains no data rows")
 
-        total = len(rows)
+        pattern = re.compile(r"\{([^{}]+)\}")
 
-        # Use the seed as the sequential index
+        # Every row expands into all of its wildcard combinations, and the
+        # seed walks through them in order: all combinations of row 1,
+        # then all of row 2, and so on. The first wildcard in a row changes
+        # fastest. Counts are computed, never materialized, so big rows are fine.
+        parsed = []  # (text, [options per group], combo count)
+        for r in rows:
+            if column >= len(r):
+                parsed.append((None, [], 1))
+                continue
+            text = r[column].strip()
+            groups = [[o.strip() for o in g.split("|")] for g in pattern.findall(text)]
+            count = 1
+            for g in groups:
+                count *= len(g)
+            parsed.append((text, groups, count))
+
+        total_rows = len(rows)
+        total_prompts = sum(c for _, _, c in parsed)
+
         if wrap:
-            used_index = seed % total
+            used_index = seed % total_prompts
         else:
-            if seed >= total:
+            if seed >= total_prompts:
                 raise IndexError(
-                    f"seed/index {seed} is out of range (CSV has {total} rows). "
+                    f"seed/index {seed} is out of range (CSV expands to {total_prompts} prompts). "
                     "Enable 'wrap' or lower the seed."
                 )
             used_index = seed
 
-        row = rows[used_index]
+        offset = used_index
+        row_i = 0
+        while offset >= parsed[row_i][2]:
+            offset -= parsed[row_i][2]
+            row_i += 1
 
-        if column >= len(row):
+        text, groups, _ = parsed[row_i]
+        if text is None:
             raise IndexError(
-                f"column {column} does not exist in row {used_index} "
-                f"(row has only {len(row)} columns)"
+                f"column {column} does not exist in row {row_i} "
+                f"(row has only {len(rows[row_i])} columns)"
             )
 
-        text = row[column].strip()
+        picks = []
+        for g in groups:
+            picks.append(g[offset % len(g)])
+            offset //= len(g)
+        picks_iter = iter(picks)
 
-        def sequential_replacer(match: re.Match) -> str:
-            options = [opt.strip() for opt in match.group(1).split("|")]
-            if not options:
-                return ""
-            return options[used_index % len(options)]
-
-        expanded = re.sub(r"\{([^{}]+)\}", sequential_replacer, text)
+        expanded = pattern.sub(lambda m: next(picks_iter), text)
         final_prompt = f"{prefix}{expanded}{suffix}".strip()
 
-        return (final_prompt, used_index, total)
+        return (final_prompt, used_index, total_rows, total_prompts)
 
 NODE_CLASS_MAPPINGS = {
     "SequentialCSVWildcard": SequentialCSVWildcard,

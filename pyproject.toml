@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-sequentialcsvwildcard"
-description = "Load prompts from a CSV file and step through them row by row, expanding {a|b|c} wildcards sequentially."
-version = "1.0.0"
+description = "Load prompts from a CSV file and walk through every {a|b|c} wildcard combination in order, row by row."
+version = "1.1.0"
 license = { file = "LICENSE" }
 dependencies = []
 
